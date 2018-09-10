@@ -44,7 +44,7 @@ class WorkerThread(QThread):
         #self.taskview = taskview
 
     def addMessage(self,message,newLine = True):
-        self.emit(SIGNAL("addMessage(QString)"),QString(message))
+        self.emit(SIGNAL("addMessage(QString)"),message)
         print message
         pass
 
@@ -74,7 +74,7 @@ class WorkerThread(QThread):
                     data = conn.recv(8192)
                     self.addMessage("Client says: '" + data + "'")
                     data = gui3d.app.mhapi.internals.JsonCall(data)
-    
+                    print "result: ", data
                     self.jsonCall = data
                     self.currentConnection = conn
     
