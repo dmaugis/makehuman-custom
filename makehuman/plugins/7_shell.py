@@ -45,7 +45,8 @@ from core import G
 import log
 from PyQt4 import QtCore, QtGui
 
-import ipythonconsole
+#import ipythonconsole
+import qtconsole
 
 MAX_COMPLETIONS = -1
 
@@ -61,10 +62,10 @@ class ShellTaskView(gui3d.TaskView):
         self.history = []
         self.histitem = None
 
-        if ipythonconsole:
+        #if ipythonconsole:
             # Use the more advanced Ipython console
-            self.console = self.addTopWidget(ipythonconsole.IPythonConsoleWidget())
-            return
+            #self.console = self.addTopWidget(ipythonconsole.IPythonConsoleWidget())
+        #    return
 
         # Fall back to old console
         self.console = None
