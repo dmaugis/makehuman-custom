@@ -2747,7 +2747,7 @@ class RangeSlider(QtGui.QWidget, Widget):
             cls._imageCache[path] = getPixmap(path)
         return cls._imageCache[path]
 
-    def __init__(self, value=0.0, min=0.0, max=1.0, label=None, vertical=False, valueConverter=None, image=None,
+    def __init__(self, start=100, end=900,min=0.0, max=1000, label=None, vertical=False, valueConverter=None, image=None,
                  scale=1000):
         super(RangeSlider, self).__init__()
         Widget.__init__(self)
@@ -2767,7 +2767,7 @@ class RangeSlider(QtGui.QWidget, Widget):
         self.slider.setMin(0)
         self.slider.setMax(self.scale)
         self.slider.setDrawValues(False)
-        self.slider.setStart(self._f2i(value))
+        self.slider.setRange(self._f2i(start),self._f2i(end))
         #self.slider.setTracking(False)
         self.connect(self.slider, QtCore.SIGNAL('sliderMoved(int)'), self._changing)
         self.connect(self.slider, QtCore.SIGNAL('valueChanged(int)'), self._changed)
@@ -2796,7 +2796,7 @@ class RangeSlider(QtGui.QWidget, Widget):
         else:
             self.image = None
 
-        self._sync(value)
+        self._sync(start,end)
         self._update_image()
 
         type(self)._instances.add(self)
@@ -2902,11 +2902,7 @@ class RangeSlider(QtGui.QWidget, Widget):
     def _pressed(self):
         self.callEvent('onPress', self)
 
-    def _sync(self, value):
-        if '%' in self.text:
-            self.label.setText(self.text % self.toDisplay(value))
-        if self.edit is not None:
-            self.edit.setText('%.2f' % self.toDisplay(value))
+    def _sync(self, start,stop):
         if hasattr(self.valueConverter, 'units') and \
                 self.valueConverter.units != unicode(self.units.text()):
             self.units.setText(self.valueConverter.units)
