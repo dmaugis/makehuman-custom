@@ -144,7 +144,9 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                                                     self.extension,
                                                     name='Randomizer'))
         self.filechooser.enableAutoRefresh(True)
-
+        @self.filechooser.mhEvent
+        def onFileSelected(filename):
+            self.loadRandomizer(filename)
 
         toolbox = self.addLeftWidget(gui.SliderBox('Randomize settings'))
         self.macro = toolbox.addWidget(gui.CheckBox("Macro", True))
@@ -187,12 +189,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             randomize(self)
 
     def saveCurrentRandomizer(self, filename):
-        import makehuman
-        #unitpose_values = dict([(m, v) for m, v in self.modifiers.iteritems() if v != 0])
-        #if len(unitpose_values) == 0:
-        #    raise RuntimeError("Requires at least one pose to be specified")
-        #tags = [t.strip() for t in self.tagsField.getValue().split(';')]
-
+        all={}
         header = {"name": self.nameField.getValue(),
                 "description": self.descrField.getValue(),
                 #"tags": tags,
@@ -200,19 +197,33 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 "author": self.authorField.getValue(),
                 "copyright": self.copyrightField.getValue(),
                 "license": self.licenseField.getValue(),
-                "homepage": self.websiteField.getValue()
+                "homepage": self.websiteField.getValue(),
+                "version": 0.1
                 }
-        print "filename:",filename
-        body={}
+        all["info"]=header
+        modif={}
         for s in self.sliders:
-            body[s]=self.sliders[s].getRange()
-        json.dump(body, open(filename, 'w'), indent=4)
+            modif[s]=self.sliders[s].getRange()
+        all["modifiers"]=modif
+        json.dump(all, open(filename, 'w'), indent=4)
         log.message("Saved randomizer as %s" % filename)
 
     def loadRandomizer(self,filename):
         print "filename:",filename
-        dict=json.load(filename)
-        print "dict: ",dict
+        with open(filename) as json_data:
+            _dict = json.load(json_data)
+            # header infos
+            header =_dict["info"]
+            self.nameField.setValue(header["name"])
+            self.descrField.setValue(header["description"])
+            self.authorField.setValue(header["author"])
+            self.copyrightField.setValue(header["copyright"])
+            self.licenseField.setValue(header["license"])
+            self.websiteField.setValue(header["homepage"])
+            # modifiers infos
+            modif =_dict["modifiers"]
+            for k in modif:
+                self.sliders[k].setRange(modif[k])
 
 
     def randomize(human):
@@ -223,13 +234,8 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 randomValue = getRandomValue(m.getMin(), m.getMax(), m.getDefaultValue(),2.0)
         pass
 
-
-
     def onShow(self, event):
         guirender.RenderTaskView.onShow(self, event)
-
-
-
 
 
 category = None

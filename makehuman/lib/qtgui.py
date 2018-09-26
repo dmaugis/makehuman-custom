@@ -600,6 +600,9 @@ class RangeSlider(QtGui.QWidget, Widget):
     def getRange(self):
         return self.slider.getRange()
 
+    def setRange(self,range):
+        print self.slider.setRange(range[0],range[1])
+
 """-----------------------------------------"""
 
 class ButtonBase(Widget):
