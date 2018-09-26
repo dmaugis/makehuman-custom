@@ -35,12 +35,10 @@ import log
 import filecache
 import filechooser as fc
 import getpath
-
+import random
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
-
-
 
 DEFAULT_CSS = """
 QRangeSlider * {
@@ -71,9 +69,6 @@ QRangeSlider > QSplitter::handle:pressed {
 
 """
 
-
-
-
 """=================================================="""
 
 
@@ -89,7 +84,7 @@ class TextEdit(gui.GroupBox):
         return self.edit.getText()
 
 
-def getRandomValue(minValue, maxValue, middleValue, sigmaFactor = 0.2):
+def getRandomValue(minValue, maxValue, middleValue, sigmaFactor=0.2):
     rangeWidth = float(abs(maxValue - minValue))
     sigma = sigmaFactor * rangeWidth
     randomVal = random.gauss(middleValue, sigma)
@@ -101,14 +96,13 @@ def getRandomValue(minValue, maxValue, middleValue, sigmaFactor = 0.2):
 
 
 class RandomBodyTaskView(guirender.RenderTaskView):
-
     def __init__(self, category):
         self.human = gui3d.app.selectedHuman
         guirender.RenderTaskView.__init__(self, category, 'RandomBody')
         self.extension = 'mhrnd'
-        #filecache.MetadataCacher.__init__(self, self.extension, 'randomizer_filecache.mhc')
+        # filecache.MetadataCacher.__init__(self, self.extension, 'randomizer_filecache.mhc')
         self.selectedFile = None
-        self.selectedRnd  = None
+        self.selectedRnd = None
 
         self.sysDataPath = getpath.getSysDataPath('randomizers')
         self.userPath = getpath.getDataPath('randomizers')
@@ -140,10 +134,11 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 self.saveCurrentRandomizer(path)
 
         self.filechooser = self.addRightWidget(fc.ListFileChooser( \
-                                                    self.paths,
-                                                    self.extension,
-                                                    name='Randomizer'))
+            self.paths,
+            self.extension,
+            name='Randomizer'))
         self.filechooser.enableAutoRefresh(True)
+
         @self.filechooser.mhEvent
         def onFileSelected(filename):
             self.loadRandomizer(filename)
@@ -167,53 +162,85 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             modifierGroups = modifierGroups + ['eyebrows', 'eyes', 'chin',
                                                'forehead', 'head', 'mouth', 'nose', 'neck', 'ears',
                                                'cheek']
-        self.groups    = {}
+        self.groups = {}
         self.modifiers = {}
-        self.sliders   = {}
+        self.sliders = {}
         for mGroup in modifierGroups:
             self.groups[mGroup] = self.addLeftWidget(gui.RangeSliderBox(mGroup))
-            modifiers=self.human.getModifiersByGroup(mGroup)
+            modifiers = self.human.getModifiersByGroup(mGroup)
             for m in modifiers:
-               try:
-                  rs = gui.RangeSlider(label=m.fullName)
-                  rs.modifier=m
-                  rs.modifier_name=m.fullName
-                  self.sliders[m.fullName] = self.groups[mGroup].addWidget(rs)
-                  pass
-               except:
-                  print "error:", sys.exc_info()
-                  exit(-1)
+                try:
+                    label=None
+                    if label is None:
+                        # Guess a suitable slider label from target name
+                        tlabel = m.name.split('-')
+                        if "|" in tlabel[len(tlabel) - 1]:
+                            tlabel = tlabel[:-1]
+                        if len(tlabel) > 1 and tlabel[0] == m.groupName:
+                            label = tlabel[1:]
+                        else:
+                            label = tlabel
+                        label = ' '.join([word.capitalize() for word in label])
+
+                    # create range slider
+                    rs = gui.RangeSlider(label)
+                    rs.modifier = m
+                    #rs.modifier_name = m.fullName
+                    self.sliders[m.fullName] = self.groups[mGroup].addWidget(rs)
+                    pass
+                except:
+                    print "error:", sys.exc_info()
+                    exit(-1)
+
 
         @self.randomBtn.mhEvent
         def onClicked(event):
-            randomize(self)
+            self.randomize()
+
+
+    def randomize(self):
+        print "randomize(body)"
+        randomValues = {}
+        for m in self.sliders:
+            s = self.sliders[m]
+            # print s.start(),s.end(),s.min(),s.max(),getRandomValue(s.start(), s.end(),(s.end()+s.start())/2,2.0)
+            svalue = getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, 2.0) / (s.max() - s.min())
+            print m, ": ", svalue,
+            mod=s.modifier
+            print "-> ",mod.getMin()," ",mod.getMax(), " ", mod.getValue(),
+            # translate to modifier value
+            modvalue=mod.getMin()+(svalue*(mod.getMax()-mod.getMin()))
+            self.human.getModifier(m).setValue(modvalue)
+        pass
+
 
     def saveCurrentRandomizer(self, filename):
-        all={}
+        all = {}
         header = {"name": self.nameField.getValue(),
-                "description": self.descrField.getValue(),
-                #"tags": tags,
-                #"unit_poses": unitpose_values,
-                "author": self.authorField.getValue(),
-                "copyright": self.copyrightField.getValue(),
-                "license": self.licenseField.getValue(),
-                "homepage": self.websiteField.getValue(),
-                "version": 0.1
-                }
-        all["info"]=header
-        modif={}
+                  "description": self.descrField.getValue(),
+                  # "tags": tags,
+                  # "unit_poses": unitpose_values,
+                  "author": self.authorField.getValue(),
+                  "copyright": self.copyrightField.getValue(),
+                  "license": self.licenseField.getValue(),
+                  "homepage": self.websiteField.getValue(),
+                  "version": 0.1
+                  }
+        all["info"] = header
+        modif = {}
         for s in self.sliders:
-            modif[s]=self.sliders[s].getRange()
-        all["modifiers"]=modif
+            modif[s] = self.sliders[s].getRange()
+        all["modifiers"] = modif
         json.dump(all, open(filename, 'w'), indent=4)
         log.message("Saved randomizer as %s" % filename)
 
-    def loadRandomizer(self,filename):
-        print "filename:",filename
+
+    def loadRandomizer(self, filename):
+        print "filename:", filename
         with open(filename) as json_data:
             _dict = json.load(json_data)
             # header infos
-            header =_dict["info"]
+            header = _dict["info"]
             self.nameField.setValue(header["name"])
             self.descrField.setValue(header["description"])
             self.authorField.setValue(header["author"])
@@ -221,18 +248,10 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             self.licenseField.setValue(header["license"])
             self.websiteField.setValue(header["homepage"])
             # modifiers infos
-            modif =_dict["modifiers"]
+            modif = _dict["modifiers"]
             for k in modif:
                 self.sliders[k].setRange(modif[k])
 
-
-    def randomize(human):
-        print "randomize(body)"
-        randomValues = {}
-        for m in self.modifiers:
-            if m.fullName not in randomValues:
-                randomValue = getRandomValue(m.getMin(), m.getMax(), m.getDefaultValue(),2.0)
-        pass
 
     def onShow(self, event):
         guirender.RenderTaskView.onShow(self, event)
@@ -245,6 +264,7 @@ taskview = None
 def load(app):
     category = app.getCategory('Modelling')
     taskview = category.addTask(RandomBodyTaskView(category))
+
 
 def unload(app):
     if taskview:
