@@ -336,7 +336,6 @@
         {"target": "breast-volume-vert", "min": "down", "max": "up"},
         {"target": "nipple-size", "min": "decr", "max": "incr"},
         {"target": "nipple-point", "min": "decr", "max": "incr"}
-
     ]
   },
 

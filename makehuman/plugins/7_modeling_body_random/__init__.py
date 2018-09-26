@@ -34,6 +34,7 @@ import log
 import filecache
 import filechooser as fc
 import getpath
+import qrangeslider
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
@@ -140,7 +141,13 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                try:
                   #print m.fullName,"\t",m.getValue()," min ",m.getMin(), " max ",m.getMax(), " default ",m.getDefaultValue()
                   #self.sliders[m.fullName]=explorer.addWidget(gui.RangeSlider(start=1.0, end=999.0,min=0.0, max=1000.0, label=m.fullName))
-                  self.sliders[m.fullName] = self.groups[mGroup].addWidget(gui.RangeSlider(start=1.0, end=999.0, min=0.0, max=1000.0, label=m.fullName))
+                  #self.sliders[m.fullName] = self.groups[mGroup].addWidget(gui.QRangeSlider(start=1.0, end=999.0, min=0.0, max=1000.0, label=m.fullName))
+                  rs=gui.QRangeSlider()
+                  rs.setWindowTitle(m.fullName)
+                  rs.modifier_name=m.fullName
+                  rs.setFixedHeight(36)
+                  self.sliders[m.fullName] = self.groups[mGroup].addWidget(rs)
+                  pass
                except:
                   pass
 
@@ -155,7 +162,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         #    raise RuntimeError("Requires at least one pose to be specified")
         #tags = [t.strip() for t in self.tagsField.getValue().split(';')]
 
-        data = {"name": self.nameField.getValue(),
+        header = {"name": self.nameField.getValue(),
                 "description": self.descrField.getValue(),
                 #"tags": tags,
                 #"unit_poses": unitpose_values,
@@ -164,8 +171,11 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 "license": self.licenseField.getValue(),
                 "homepage": self.websiteField.getValue()
                 }
-        print filename
-        json.dump(data, open(filename, 'w'), indent=4)
+        print "filename:",filename
+        body={}
+        for s in self.sliders:
+            body[s]=self.sliders[s].getRange()
+        json.dump(body, open(filename, 'w'), indent=4)
         log.message("Saved randomizer as %s" % filename)
 
 
