@@ -149,6 +149,10 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         self.body = toolbox.addWidget(gui.CheckBox("Body", True))
 
         self.symmetry = toolbox.addWidget(gui.Slider(value=0.7, min=0.0, max=1.0, label="Symmetry"))
+
+        self.fromDefaultsBtn = toolbox.addWidget(gui.Button("from Defaults"))
+        self.fromCurrentBtn = toolbox.addWidget(gui.Button("from Current"))
+
         self.randomBtn = toolbox.addWidget(gui.Button("Randomize"))
 
         #################################
@@ -197,6 +201,24 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         def onClicked(event):
             self.randomize()
 
+        @self.fromDefaultsBtn.mhEvent
+        def onClicked(event):
+            self.fromCurrent()
+
+        @self.fromCurrentBtn.mhEvent
+        def onClicked(event):
+            self.fromCurrent()
+
+    def fromCurrent(self):
+        for m in self.sliders:
+            print m, " ",self.human.getModifier(m).getValue()
+            mod=self.human.getModifier(m)
+            curval=99*(mod.getValue()-mod.getMin())/(mod.getMax()-mod.getMin())
+            s = self.sliders[m]
+            minval=max(int(curval-1),0)
+            maxval=min(int(curval+1),100)
+            s.setRange([minval,maxval])
+        pass
 
     def randomize(self):
         print "randomize(body)"
@@ -211,7 +233,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             # translate to modifier value
             modvalue=mod.getMin()+(svalue*(mod.getMax()-mod.getMin()))
             self.human.getModifier(m).setValue(modvalue)
-        pass
+        self.human.applyAllTargets()
 
 
     def saveCurrentRandomizer(self, filename):
