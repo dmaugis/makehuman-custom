@@ -21,6 +21,7 @@ Abstract
 
 """
 import os
+import sys
 import json
 import gui3d
 import mh
@@ -34,11 +35,46 @@ import log
 import filecache
 import filechooser as fc
 import getpath
-import qrangeslider
+
 
 from PyQt4.QtCore import *
 from PyQt4.QtGui import *
 
+
+
+DEFAULT_CSS = """
+QRangeSlider * {
+    border: 0px;
+    padding: 0px;
+}
+QRangeSlider #Head {
+    background: #737373;
+}
+QRangeSlider #Span {
+    background: #ffcc00;
+}
+QRangeSlider #Span:active {
+    background: #ff9933;
+}
+QRangeSlider #Tail {
+    background: #737373;
+}
+QRangeSlider > QSplitter::handle {
+    background: #393;
+}
+QRangeSlider > QSplitter::handle:vertical {
+    height: 4px;
+}
+QRangeSlider > QSplitter::handle:pressed {
+    background: #ca5;
+}
+
+"""
+
+
+
+
+"""=================================================="""
 
 
 class TextEdit(gui.GroupBox):
@@ -133,23 +169,18 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         self.modifiers = {}
         self.sliders   = {}
         for mGroup in modifierGroups:
-            self.groups[mGroup] = self.addLeftWidget(gui.SliderBox(mGroup))
+            self.groups[mGroup] = self.addLeftWidget(gui.RangeSliderBox(mGroup))
             modifiers=self.human.getModifiersByGroup(mGroup)
-            #self.modifiers = self.modifiers + self.human.getModifiersByGroup(mGroup)
-
             for m in modifiers:
                try:
-                  #print m.fullName,"\t",m.getValue()," min ",m.getMin(), " max ",m.getMax(), " default ",m.getDefaultValue()
-                  #self.sliders[m.fullName]=explorer.addWidget(gui.RangeSlider(start=1.0, end=999.0,min=0.0, max=1000.0, label=m.fullName))
-                  #self.sliders[m.fullName] = self.groups[mGroup].addWidget(gui.QRangeSlider(start=1.0, end=999.0, min=0.0, max=1000.0, label=m.fullName))
-                  rs=gui.QRangeSlider()
-                  rs.setWindowTitle(m.fullName)
+                  rs = gui.RangeSlider(label=m.fullName)
+                  rs.modifier=m
                   rs.modifier_name=m.fullName
-                  rs.setFixedHeight(36)
                   self.sliders[m.fullName] = self.groups[mGroup].addWidget(rs)
                   pass
                except:
-                  pass
+                  print "error:", sys.exc_info()
+                  exit(-1)
 
         @self.randomBtn.mhEvent
         def onClicked(event):
@@ -177,6 +208,11 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             body[s]=self.sliders[s].getRange()
         json.dump(body, open(filename, 'w'), indent=4)
         log.message("Saved randomizer as %s" % filename)
+
+    def loadRandomizer(self,filename):
+        print "filename:",filename
+        dict=json.load(filename)
+        print "dict: ",dict
 
 
     def randomize(human):
