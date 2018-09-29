@@ -195,7 +195,8 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 except:
                     print "error:", sys.exc_info()
                     exit(-1)
-
+            #break
+            pass
 
         @self.randomBtn.mhEvent
         def onClicked(event):
@@ -226,12 +227,13 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         for m in self.sliders:
             s = self.sliders[m]
             # print s.start(),s.end(),s.min(),s.max(),getRandomValue(s.start(), s.end(),(s.end()+s.start())/2,2.0)
-            svalue = getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, 2.0) / (s.max() - s.min())
-            print m, ": ", svalue,
+            svalue = float(getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, 2.0))
+            #/ (s.max() - s.min())
             mod=s.modifier
-            print "-> ",mod.getMin()," ",mod.getMax(), " ", mod.getValue(),
             # translate to modifier value
-            modvalue=mod.getMin()+(svalue*(mod.getMax()-mod.getMin()))
+            modvalue=float(mod.getMin())+(float(svalue-s.min())/float(s.max()-s.min()))*float(mod.getMax()-mod.getMin())
+            print m, ": ", svalue, " [", s.start(), " ", s.end(), "] -> ", modvalue, " [", mod.getMin(), " ", mod.getMax(), "] "
+
             self.human.getModifier(m).setValue(modvalue)
         self.human.applyAllTargets()
 
@@ -272,8 +274,10 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             # modifiers infos
             modif = _dict["modifiers"]
             for k in modif:
-                self.sliders[k].setRange(modif[k])
-
+                try:
+                    self.sliders[k].setRange(modif[k])
+                except:
+                    pass
 
     def onShow(self, event):
         guirender.RenderTaskView.onShow(self, event)
