@@ -149,6 +149,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         self.body = toolbox.addWidget(gui.CheckBox("Body", True))
 
         self.symmetry = toolbox.addWidget(gui.Slider(value=0.7, min=0.0, max=1.0, label="Symmetry"))
+        self.sigma = toolbox.addWidget(gui.Slider(value=0.2, min=0.0, max=1.0, label="Sigma"))
 
         self.fromDefaultsBtn = toolbox.addWidget(gui.Button("from Defaults"))
         self.fromCurrentBtn = toolbox.addWidget(gui.Button("from Current"))
@@ -204,11 +205,22 @@ class RandomBodyTaskView(guirender.RenderTaskView):
 
         @self.fromDefaultsBtn.mhEvent
         def onClicked(event):
-            self.fromCurrent()
+            self.fromDefaults()
 
         @self.fromCurrentBtn.mhEvent
         def onClicked(event):
             self.fromCurrent()
+
+    def fromDefaults(self):
+        for m in self.sliders:
+            print m, " ",self.human.getModifier(m).getDefaultValue()
+            mod=self.human.getModifier(m)
+            curval=99*(mod.getDefaultValue()-mod.getMin())/(mod.getMax()-mod.getMin())
+            s = self.sliders[m]
+            minval=max(int(curval-self.sigma.getValue()),0)
+            maxval=min(int(curval+self.sigma.getValue()),99)
+            s.setRange([minval,maxval])
+        pass
 
     def fromCurrent(self):
         for m in self.sliders:
@@ -216,25 +228,45 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             mod=self.human.getModifier(m)
             curval=99*(mod.getValue()-mod.getMin())/(mod.getMax()-mod.getMin())
             s = self.sliders[m]
-            minval=max(int(curval-1),0)
-            maxval=min(int(curval+1),100)
+            minval=max(int(curval-self.sigma.getValue()),0)
+            maxval=min(int(curval+self.sigma.getValue()),99)
             s.setRange([minval,maxval])
         pass
 
+# getSymmetricOpposite
     def randomize(self):
         print "randomize(body)"
         randomValues = {}
         for m in self.sliders:
+            # get the slider gadget
             s = self.sliders[m]
-            # print s.start(),s.end(),s.min(),s.max(),getRandomValue(s.start(), s.end(),(s.end()+s.start())/2,2.0)
-            svalue = float(getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, 2.0))
-            #/ (s.max() - s.min())
+            # get associated modifier
             mod=s.modifier
-            # translate to modifier value
-            modvalue=float(mod.getMin())+(float(svalue-s.min())/float(s.max()-s.min()))*float(mod.getMax()-mod.getMin())
-            print m, ": ", svalue, " [", s.start(), " ", s.end(), "] -> ", modvalue, " [", mod.getMin(), " ", mod.getMax(), "] "
+            #print "symmetry: ",self.symmetry.getValue()
+            if mod.getSymmetrySide() is None or self.symmetry.getValue()<0.1:
+                # no need to take symmetry into account -> random value
+                svalue = float(getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, self.sigma.getValue()))
+                # translate to modifier value
+                modvalue = float(mod.getMin()) + (float(svalue - s.min()) / float(s.max() - s.min())) * float(mod.getMax() - mod.getMin())
+                # apply
+                self.human.getModifier(m).setValue(modvalue)
+            elif mod.getSymmetrySide() == 'l':
+                #print "symmetric ", mod.fullName
+                svalue = float(getRandomValue(s.start(), s.end(), (s.end() + s.start()) / 2, self.sigma.getValue()))
+                modvalue = float(mod.getMin()) + (float(svalue - s.min()) / float(s.max() - s.min())) * float(mod.getMax() - mod.getMin())
+                self.human.getModifier(m).setValue(modvalue)
+                m2 = mod.getSymmetricOpposite()
+                s2=self.sliders[m2]
+                mod2=s2.modifier
+                if svalue> s2.start() or svalue<s2.end():
+                    svalue2 = float(getRandomValue(s2.start(), s2.end(), svalue, self.sigma.getValue()))
+                else:
+                    svalue2 = float(getRandomValue(s2.start(), s2.end(), (s2.end() + s2.start()) / 2, 1.0-self.symmetry.getValue()))
+                modvalue2 = float(mod2.getMin()) + (float(svalue2 - s2.min()) / float(s2.max() - s2.min())) * float(mod2.getMax() - mod2.getMin())
+                self.human.getModifier(m2).setValue(modvalue2)
+                pass
 
-            self.human.getModifier(m).setValue(modvalue)
+
         self.human.applyAllTargets()
 
 
