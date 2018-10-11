@@ -116,7 +116,7 @@ class SkeletonLibrary(gui3d.TaskView, filecache.MetadataCacher):
                                                     name='Rig presets',
                                                     notFoundImage = mh.getSysDataPath('notfound.thumb'), 
                                                     noneItem = True, 
-                                                    doNotRecurse = True))
+                                                    doNotRecurse = False))
         self.filechooser.setIconSize(50,50)
         self.filechooser.enableAutoRefresh(False)
 
