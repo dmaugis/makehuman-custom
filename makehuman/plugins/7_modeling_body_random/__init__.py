@@ -144,6 +144,9 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             self.loadRandomizer(filename)
 
         toolbox = self.addLeftWidget(gui.SliderBox('Randomize settings'))
+        self.fromDefaultsBtn = toolbox.addWidget(gui.Button("from Defaults"))
+        self.fromCurrentBtn = toolbox.addWidget(gui.Button("from Current"))
+
         self.macro = toolbox.addWidget(gui.CheckBox("Macro", True))
         self.face = toolbox.addWidget(gui.CheckBox("Face", True))
         self.body = toolbox.addWidget(gui.CheckBox("Body", True))
@@ -151,8 +154,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         self.symmetry = toolbox.addWidget(gui.Slider(value=0.7, min=0.0, max=1.0, label="Symmetry"))
         self.sigma = toolbox.addWidget(gui.Slider(value=0.2, min=0.0, max=1.0, label="Sigma"))
 
-        self.fromDefaultsBtn = toolbox.addWidget(gui.Button("from Defaults"))
-        self.fromCurrentBtn = toolbox.addWidget(gui.Button("from Current"))
+
 
         self.randomBtn = toolbox.addWidget(gui.Button("Randomize"))
 
@@ -167,6 +169,9 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             modifierGroups = modifierGroups + ['eyebrows', 'eyes', 'chin',
                                                'forehead', 'head', 'mouth', 'nose', 'neck', 'ears',
                                                'cheek']
+
+        modifierGroups = modifierGroups + [ 'custom' ]
+        
         self.groups = {}
         self.modifiers = {}
         self.sliders = {}
@@ -196,8 +201,7 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                 except:
                     print "error:", sys.exc_info()
                     exit(-1)
-            #break
-            pass
+        pass
 
         @self.randomBtn.mhEvent
         def onClicked(event):
