@@ -143,22 +143,19 @@ class RandomBodyTaskView(guirender.RenderTaskView):
         def onFileSelected(filename):
             self.loadRandomizer(filename)
 
-        toolbox = self.addLeftWidget(gui.SliderBox('Randomize settings'))
+        toolbox = self.addLeftWidget(gui.SliderBox('Randomizer settings'))
         self.fromDefaultsBtn = toolbox.addWidget(gui.Button("from Defaults"))
         self.fromCurrentBtn = toolbox.addWidget(gui.Button("from Current"))
 
         self.macro = toolbox.addWidget(gui.CheckBox("Macro", True))
         self.face = toolbox.addWidget(gui.CheckBox("Face", True))
         self.body = toolbox.addWidget(gui.CheckBox("Body", True))
+        self.custom = toolbox.addWidget(gui.CheckBox("Custom", True))
 
         self.symmetry = toolbox.addWidget(gui.Slider(value=0.7, min=0.0, max=1.0, label="Symmetry"))
         self.sigma = toolbox.addWidget(gui.Slider(value=0.2, min=0.0, max=1.0, label="Sigma"))
 
-
-
         self.randomBtn = toolbox.addWidget(gui.Button("Randomize"))
-
-        #################################
 
         modifierGroups = []
         if self.macro:
@@ -169,9 +166,18 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             modifierGroups = modifierGroups + ['eyebrows', 'eyes', 'chin',
                                                'forehead', 'head', 'mouth', 'nose', 'neck', 'ears',
                                                'cheek']
+        if self.custom:
+            modifierGroups = modifierGroups + ['custom']
 
-        modifierGroups = modifierGroups + [ 'custom' ]
-        
+        import json
+
+        labels={}
+        try:
+            labels = json.load(open(getpath.getSysDataPath('modifiers/labels.json'), 'rb'))
+        except:
+            print "!!!!!!!!!!!!!! could not load"
+        print labels
+
         self.groups = {}
         self.modifiers = {}
         self.sliders = {}
@@ -179,8 +185,12 @@ class RandomBodyTaskView(guirender.RenderTaskView):
             self.groups[mGroup] = self.addLeftWidget(gui.RangeSliderBox(mGroup))
             modifiers = self.human.getModifiersByGroup(mGroup)
             for m in modifiers:
+                label = None
                 try:
-                    label=None
+                    label = labels[m.fullName]
+                except:
+                    pass
+                try:
                     if label is None:
                         # Guess a suitable slider label from target name
                         tlabel = m.name.split('-')
@@ -191,7 +201,6 @@ class RandomBodyTaskView(guirender.RenderTaskView):
                         else:
                             label = tlabel
                         label = ' '.join([word.capitalize() for word in label])
-
                     # create range slider
                     rs = gui.RangeSlider(label)
                     rs.modifier = m
